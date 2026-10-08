@@ -3,20 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roman Pong: Shields Up, Legionary!</title>
-<meta name="description" content="Block the arrows with your shield in Roman Pong, a free browser game.">
+<title>Roman Ping Pong: Shields Up, Warrior!</title>
+<meta name="description" content="Roman Ping Pong: pick a Roman legionary, Germanic or Briton warrior, choose arrows, pila, axes or sling stones, and block them with your shield. A free browser game with Roman fun facts.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="hero">
   <nav>
     <span class="logo">SPQR <span>Games</span></span>
-    <div class="links"><a href="#play">Play</a><a href="#how">How to play</a><a href="#legions">The legions</a></div>
+    <div class="links"><a href="#play">Play</a><a href="#how">How to play</a><a href="#warriors">The warriors</a><a href="#facts">Fun facts</a></div>
   </nav>
   <div class="hero-text">
     <p class="kicker">Anno MMXXVI</p>
-    <h1>Roman Pong</h1>
-    <p class="tagline">Two legions. One arrow. Raise your shield and defend the honour of Rome.</p>
+    <h1>Roman Ping Pong</h1>
+    <p class="tagline">Pick your warrior, choose your missile, raise your shield and defend your honour against the computer.</p>
     <a class="btn" href="#play">Enter the arena</a>
   </div>
 </header>
@@ -24,9 +24,9 @@
 <main>
   <section id="play">
     <h2>To the Arena</h2>
-    <p class="hint">Click inside the game first if you want to use the keyboard.</p>
+    <p class="hint">Choose your warrior, opponent and projectile, then click <em>To battle!</em> Click inside the game first if you want to use the keyboard.</p>
     <div class="frame">
-      <iframe src="game.html" title="Roman Pong game"></iframe>
+      <iframe id="gameFrame" src="game.html" title="Roman Ping Pong game"></iframe>
     </div>
     <p class="center"><a class="btn small" href="game.html" target="_blank">Play full screen</a></p>
   </section>
@@ -34,25 +34,93 @@
   <section id="how">
     <h2>How to Play</h2>
     <div class="cards">
-      <div class="card"><div class="icon">🛡️</div><h3>Block</h3><p>Move your legionary up and down with the mouse, touch, W/S or the arrow keys. Catch the arrow on your shield.</p></div>
-      <div class="card"><div class="icon">🏹</div><h3>Angle</h3><p>Hit the arrow near the top or bottom of your shield to send it flying at a sharper angle.</p></div>
-      <div class="card"><div class="icon">⚡</div><h3>Survive</h3><p>Every block makes the arrow faster. Let one past and the other legion scores.</p></div>
-      <div class="card"><div class="icon">🏆</div><h3>Triumph</h3><p>The first legion to VII points wins. Press Space at any time to pause.</p></div>
+      <div class="card"><div class="icon">⚔️</div><h3>Choose</h3><p>Pick a Roman legionary, a Germanic warrior or a Briton, then pick your opponent (or let fate decide with Random).</p></div>
+      <div class="card"><div class="icon">🏹</div><h3>Arm up</h3><p>Fight with an arrow, a long pilum, a spinning throwing axe or a speedy sling stone. Each one flies a little differently.</p></div>
+      <div class="card"><div class="icon">🛡️</div><h3>Block</h3><p>Move with the mouse, touch, W/S or the arrow keys. Catch the projectile on your shield.</p></div>
+      <div class="card"><div class="icon">📐</div><h3>Angle</h3><p>Hit it near the top or bottom of your shield to send it flying back at a sharper angle.</p></div>
+      <div class="card"><div class="icon">⚡</div><h3>Survive</h3><p>Every block makes it faster. Let one past and your opponent scores. Space pauses, M goes back to the menu.</p></div>
+      <div class="card"><div class="icon">🏆</div><h3>Triumph</h3><p>First to VII points wins, and you get a Roman fun fact whether you win or lose.</p></div>
     </div>
   </section>
 
-  <section id="legions">
-    <h2>The Legions</h2>
-    <div class="legions">
-      <div class="legion red"><h3>Legio I</h3><p class="who">That's you</p><p>Red shields, gold trim and a stubborn refusal to let anything past.</p></div>
-      <div class="vs">VS</div>
-      <div class="legion blue"><h3>Legio II</h3><p class="who">The computer</p><p>Blue shields, silver trim and reflexes that never get tired.</p></div>
+  <section id="warriors">
+    <h2>The Warriors</h2>
+    <p class="hint">You fight in red. The computer fights in blue.</p>
+    <div class="warriors">
+      <div class="warrior">
+        <img src="assets/warrior-legionary.png" alt="Roman legionary with crested helmet, segmented armour, curved rectangular shield and pilum" width="120" height="200">
+        <h3>Roman Legionary</h3>
+        <p class="who">The professional</p>
+        <p>Crested galea helmet, lorica segmentata armour, a big curved rectangular scutum and a pilum: a heavy javelin with a long iron shank.</p>
+      </div>
+      <div class="warrior">
+        <img src="assets/warrior-germanic.png" alt="Germanic warrior with long hair in a Suebian knot, beard, cloak, trousers, hexagonal shield and spear" width="120" height="200">
+        <h3>Germanic Warrior</h3>
+        <p class="who">From beyond the Rhine</p>
+        <p>Hair tied in a Suebian knot, a cloak and trousers, a tall painted wooden shield with an iron boss, and the framea spear. In AD 9 the Germanic leader Arminius wiped out three Roman legions in the Teutoburg Forest.</p>
+      </div>
+      <div class="warrior">
+        <img src="assets/warrior-briton.png" alt="Briton warrior with spiky limed hair, blue woad paint, gold torc, checked trousers, long bronze shield and sword" width="120" height="200">
+        <h3>Briton Warrior</h3>
+        <p class="who">Defender of the island</p>
+        <p>Julius Caesar wrote that Britons dyed themselves blue (probably with woad). Spiky limed hair, a gold torc, checked trousers, a long sword and a bronze shield inspired by the Battersea Shield found in the Thames.</p>
+      </div>
+    </div>
+    <div class="projectiles">
+      <span><strong>Arrow</strong> – swift and true</span>
+      <span><strong>Pilum</strong> – long, heavy and a bit faster</span>
+      <span><strong>Throwing axe</strong> – a spinning francisca</span>
+      <span><strong>Sling stone</strong> – small, round and quick</span>
+    </div>
+  </section>
+
+  <section id="facts">
+    <h2>Fun Facts</h2>
+    <p class="hint">Twelve facts about the Roman Empire and its emperors, including three busted myths.</p>
+    <div class="random-fact">
+      <button class="btn small" id="randomFactBtn" type="button">🎲 Random fact</button>
+      <p id="randomFact" aria-live="polite">Press the button for a random Roman fact.</p>
+    </div>
+    <div class="facts">
+      <article class="fact"><span class="tag">Emperor</span><h3>Augustus</h3><p>Augustus became Rome's first emperor in 27 BC and ruled until his death in AD 14, about 41 years. The month of August is named after him, just as July is named after Julius Caesar, who was never actually an emperor.</p></article>
+      <article class="fact myth"><span class="tag">Myth vs fact</span><h3>Caligula's horse</h3><p><span class="m">Myth:</span> Caligula made his horse Incitatus a consul.</p><p><span class="f">Fact:</span> Ancient writers only say he <em>planned</em> to. It never happened, and the story may be exaggeration or a joke aimed at the Senate. The horse did reportedly have a marble stall and an ivory manger.</p></article>
+      <article class="fact myth"><span class="tag">Myth vs fact</span><h3>Nero's fiddle</h3><p><span class="m">Myth:</span> Nero fiddled while Rome burned in AD 64.</p><p><span class="f">Fact:</span> The fiddle hadn't been invented yet. Tacitus says Nero was away at Antium when the fire began, then came back and opened his gardens to the homeless. Rumours did say he sang about the fall of Troy.</p></article>
+      <article class="fact"><span class="tag">Emperor</span><h3>Trajan</h3><p>Born in Hispania (modern Spain), Trajan was the first emperor from outside Italy. Under him the empire reached its greatest size in AD 117. Trajan's Column in Rome tells the story of his Dacian Wars in a spiral frieze.</p></article>
+      <article class="fact"><span class="tag">Emperor</span><h3>Hadrian's Wall</h3><p>Hadrian ordered a wall across northern Britain in AD 122. It ran about 73 miles (80 Roman miles) from the River Tyne to the Solway Firth, and long stretches still stand today.</p></article>
+      <article class="fact"><span class="tag">Emperor</span><h3>Marcus Aurelius</h3><p>The philosopher-emperor wrote his <em>Meditations</em> in Greek as private notes to himself, many while on campaign against Germanic tribes along the Danube. People still read them nearly 2,000 years later.</p></article>
+      <article class="fact"><span class="tag">Emperor</span><h3>Commodus</h3><p>Marcus Aurelius's son loved to fight as a gladiator in the arena and liked to be shown as Hercules. He was strangled in AD 192 by a wrestler called Narcissus.</p></article>
+      <article class="fact"><span class="tag">Emperor</span><h3>Constantine</h3><p>Constantine was proclaimed emperor by his troops at York (Eboracum) in AD 306. He was the first emperor to become a Christian, and in AD 330 he founded Constantinople, today's Istanbul.</p></article>
+      <article class="fact"><span class="tag">Empire</span><h3>Four emperors, one year</h3><p>AD 69 is called the Year of the Four Emperors: Galba, Otho, Vitellius and finally Vespasian all ruled Rome within twelve months.</p></article>
+      <article class="fact"><span class="tag">Empire</span><h3>Londinium</h3><p>The Romans founded London (Londinium) around AD 47–50. In about AD 60–61 Boudica, queen of the Iceni, led a revolt that burned it to the ground. Archaeologists still find the red layer of burnt debris.</p></article>
+      <article class="fact myth"><span class="tag">Myth vs fact</span><h3>The vomitorium</h3><p><span class="m">Myth:</span> Romans had special rooms to throw up in so they could keep feasting.</p><p><span class="f">Fact:</span> A vomitorium was a passageway that let crowds "spew out" of an amphitheatre quickly.</p></article>
+      <article class="fact"><span class="tag">Empire</span><h3>The long goodbye</h3><p>The Western Roman Empire ended in AD 476, when the last western emperor, Romulus Augustulus, was deposed. The Eastern Roman Empire lasted almost another thousand years, until Constantinople fell in 1453.</p></article>
     </div>
   </section>
 </main>
 
 <footer>
-  <p>Roman Pong · Made by Connor Dixon · <span class="numerals">MMXXVI</span></p>
+  <p>Roman Ping Pong · Made by Connor Dixon · <span class="numerals">MMXXVI</span></p>
 </footer>
+<script>
+// Resize the game iframe to fit its content (the game tells us its height)
+const frame = document.getElementById('gameFrame');
+window.addEventListener('message', e => {
+  if (e.source === frame.contentWindow && e.data && e.data.type === 'rpp-height') frame.style.height = e.data.height + 'px';
+});
+
+// Random fun fact button
+const facts = [...document.querySelectorAll('.fact')];
+let lastFact = -1;
+document.getElementById('randomFactBtn').addEventListener('click', () => {
+  let i;
+  do { i = Math.floor(Math.random() * facts.length); } while (i === lastFact && facts.length > 1);
+  lastFact = i;
+  const f = facts[i];
+  const text = [...f.querySelectorAll('p')].map(p => p.textContent).join(' ');
+  document.getElementById('randomFact').innerHTML = '<strong>' + f.querySelector('h3').textContent + ':</strong> ' + text;
+  facts.forEach(x => x.classList.remove('highlight'));
+  f.classList.add('highlight');
+});
+</script>
 </body>
 </html>
