@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roman Pong: Shields Up, Legionary!</title>
+<meta name="description" content="Block the arrows with your shield in Roman Pong, a free browser game.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero">
+  <nav>
+    <span class="logo">SPQR <span>Games</span></span>
+    <div class="links"><a href="#play">Play</a><a href="#how">How to play</a><a href="#legions">The legions</a></div>
+  </nav>
+  <div class="hero-text">
+    <p class="kicker">Anno MMXXVI</p>
+    <h1>Roman Pong</h1>
+    <p class="tagline">Two legions. One arrow. Raise your shield and defend the honour of Rome.</p>
+    <a class="btn" href="#play">Enter the arena</a>
+  </div>
+</header>
+
+<main>
+  <section id="play">
+    <h2>To the Arena</h2>
+    <p class="hint">Click inside the game first if you want to use the keyboard.</p>
+    <div class="frame">
+      <iframe src="game.html" title="Roman Pong game"></iframe>
+    </div>
+    <p class="center"><a class="btn small" href="game.html" target="_blank">Play full screen</a></p>
+  </section>
+
+  <section id="how">
+    <h2>How to Play</h2>
+    <div class="cards">
+      <div class="card"><div class="icon">🛡️</div><h3>Block</h3><p>Move your legionary up and down with the mouse, touch, W/S or the arrow keys. Catch the arrow on your shield.</p></div>
+      <div class="card"><div class="icon">🏹</div><h3>Angle</h3><p>Hit the arrow near the top or bottom of your shield to send it flying at a sharper angle.</p></div>
+      <div class="card"><div class="icon">⚡</div><h3>Survive</h3><p>Every block makes the arrow faster. Let one past and the other legion scores.</p></div>
+      <div class="card"><div class="icon">🏆</div><h3>Triumph</h3><p>The first legion to VII points wins. Press Space at any time to pause.</p></div>
+    </div>
+  </section>
+
+  <section id="legions">
+    <h2>The Legions</h2>
+    <div class="legions">
+      <div class="legion red"><h3>Legio I</h3><p class="who">That's you</p><p>Red shields, gold trim and a stubborn refusal to let anything past.</p></div>
+      <div class="vs">VS</div>
+      <div class="legion blue"><h3>Legio II</h3><p class="who">The computer</p><p>Blue shields, silver trim and reflexes that never get tired.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p>Roman Pong · Made by Connor Dixon · <span class="numerals">MMXXVI</span></p>
+</footer>
+</body>
+</html>

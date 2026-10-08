@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Roman Pong</title>
+<style>
+  html, body { margin: 0; min-height: 100%; background: #2b1d14; color: #f3e6c8;
+    font-family: Georgia, 'Times New Roman', serif; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; }
+  #wrap { width: 800px; max-width: 95vw; }
+  body { padding: 10px 0; box-sizing: border-box; }
+  #scoreboard { display: flex; align-items: center; justify-content: space-between;
+    background: linear-gradient(#5a3b22, #3d2716); border: 3px solid #c9a227; border-bottom: none;
+    border-radius: 10px 10px 0 0; padding: 8px 16px; box-sizing: border-box; }
+  .team { display: flex; align-items: center; gap: 12px; font-size: 18px; letter-spacing: 1px; }
+  .team .score { font-size: 40px; font-weight: bold; min-width: 48px; text-align: center;
+    border-radius: 8px; padding: 0 10px; color: #fff; }
+  .team .numeral { font-size: 14px; opacity: 0.8; display: block; }
+  .red .score { background: #b71c1c; box-shadow: 0 0 0 2px #c9a227; }
+  .blue .score { background: #1e4fa3; box-shadow: 0 0 0 2px #c0c6cc; }
+  .red .name { color: #ff8a80; } .blue .name { color: #90caf9; }
+  .mid { text-align: center; font-size: 14px; color: #c9a227; text-transform: uppercase; letter-spacing: 2px; }
+  canvas { display: block; width: 100%; height: auto; border: 3px solid #c9a227; border-radius: 0 0 10px 10px;
+    box-sizing: border-box; touch-action: none; }
+  p { margin: 10px; opacity: 0.75; font-size: 14px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="scoreboard">
+    <div class="team red"><span class="name">Legio I (You)</span><span class="score"><span id="ps">0</span><span class="numeral" id="psr">–</span></span></div>
+    <div class="mid">First to<br><span id="target">VII</span></div>
+    <div class="team blue"><span class="score"><span id="as">0</span><span class="numeral" id="asr">–</span></span><span class="name">Legio II (Computer)</span></div>
+  </div>
+  <canvas id="game" width="800" height="500"></canvas>
+</div>
+<p>Move your soldier with the mouse, touch, W/S or the arrow keys. Space pauses. Block the arrows with your shield!</p>
+<script>
+// ===== Settings: tweak these to change the game =====
+const WIN_SCORE = 7;          // points needed to win
+const SHIELD_HEIGHT = 90;     // the shield is the "paddle"
+const SHIELD_WIDTH = 14;
+const PLAYER_SPEED = 7;       // keyboard speed of your soldier
+const AI_SPEED = 5;           // how fast the computer soldier moves (higher = harder)
+const ARROW_START_SPEED = 6;
+const ARROW_SPEEDUP = 1.05;   // arrow gets 5% faster on every block
+const ARROW_TIP = 20;         // distance from arrow centre to its tip
+
+const RED_TEAM  = { shield: '#b71c1c', trim: '#e6b422', tunic: '#c62828', crest: '#d32f2f', feather: '#ffcdd2' };
+const BLUE_TEAM = { shield: '#1e4fa3', trim: '#d7dde2', tunic: '#1565c0', crest: '#1976d2', feather: '#bbdefb' };
+// =====================================================
+
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+const TOP_LIMIT = 36, BOTTOM_LIMIT = H - SHIELD_HEIGHT - 22; // room for helmets and legs
+
+const player = { x: 50, y: H / 2 - SHIELD_HEIGHT / 2, score: 0, flash: 0, team: RED_TEAM, facing: 1 };
+const ai = { x: W - 50 - SHIELD_WIDTH, y: H / 2 - SHIELD_HEIGHT / 2, score: 0, flash: 0, team: BLUE_TEAM, facing: -1 };
+const arrow = { x: W / 2, y: H / 2, vx: 0, vy: 0, lastFeather: RED_TEAM.feather };
+const keys = {};
+let sparks = [];
+let paused = false, winner = null, serveTimer = 0;
+
+function roman(n) {
+  if (n === 0) return '–';
+  const map = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']];
+  let s = '';
+  for (const [v, r] of map) while (n >= v) { s += r; n -= v; }
+  return s;
+}
+
+function updateScoreboard() {
+  document.getElementById('ps').textContent = player.score;
+  document.getElementById('as').textContent = ai.score;
+  document.getElementById('psr').textContent = roman(player.score);
+  document.getElementById('asr').textContent = roman(ai.score);
+  document.getElementById('target').textContent = roman(WIN_SCORE);
+}
+
+function resetArrow(direction) {
+  arrow.x = W / 2; arrow.y = H / 2;
+  const angle = (Math.random() * 0.5 - 0.25) * Math.PI;
+  arrow.vx = direction * ARROW_START_SPEED * Math.cos(angle);
+  arrow.vy = ARROW_START_SPEED * Math.sin(angle);
+  serveTimer = 60;
+}
+
+function restart() {
+  player.score = ai.score = 0;
+  winner = null;
+  updateScoreboard();
+  resetArrow(Math.random() < 0.5 ? 1 : -1);
+}
+
+function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+function arrowTip() {
+  const a = Math.atan2(arrow.vy, arrow.vx);
+  return { x: arrow.x + Math.cos(a) * ARROW_TIP, y: arrow.y + Math.sin(a) * ARROW_TIP };
+}
+
+function tryBlock(p) {
+  const tip = arrowTip();
+  const face = p.facing === 1 ? p.x + SHIELD_WIDTH : p.x;
+  const crossed = p.facing === 1 ? (tip.x <= face && tip.x >= face - 14) : (tip.x >= face && tip.x <= face + 14);
+  if (!crossed || tip.y < p.y - 6 || tip.y > p.y + SHIELD_HEIGHT + 6) return;
+
+  // Where it hit the shield (-1 top, 0 middle, 1 bottom) sets the bounce angle
+  const hit = clamp((tip.y - (p.y + SHIELD_HEIGHT / 2)) / (SHIELD_HEIGHT / 2), -1, 1);
+  const speed = Math.hypot(arrow.vx, arrow.vy) * ARROW_SPEEDUP;
+  const angle = hit * Math.PI / 4;
+  arrow.vx = p.facing * speed * Math.cos(angle);
+  arrow.vy = speed * Math.sin(angle);
+  arrow.x = face + p.facing * 8;
+  arrow.lastFeather = p.team.feather;
+  p.flash = 8;
+  for (let i = 0; i < 10; i++) {
+    sparks.push({ x: face, y: tip.y, vx: p.facing * Math.random() * 4, vy: (Math.random() - 0.5) * 5,
+                  life: 18 + Math.random() * 10 });
+  }
+}
+
+function update() {
+  if (keys['w'] || keys['arrowup']) player.y -= PLAYER_SPEED;
+  if (keys['s'] || keys['arrowdown']) player.y += PLAYER_SPEED;
+  player.y = clamp(player.y, TOP_LIMIT, BOTTOM_LIMIT);
+
+  // Computer soldier follows the arrow
+  const aiCenter = ai.y + SHIELD_HEIGHT / 2;
+  if (aiCenter < arrow.y - 10) ai.y += AI_SPEED;
+  else if (aiCenter > arrow.y + 10) ai.y -= AI_SPEED;
+  ai.y = clamp(ai.y, TOP_LIMIT, BOTTOM_LIMIT);
+
+  [player, ai].forEach(p => { if (p.flash > 0) p.flash--; });
+  sparks.forEach(s => { s.x += s.vx; s.y += s.vy; s.vy += 0.2; s.life--; });
+  sparks = sparks.filter(s => s.life > 0);
+
+  if (serveTimer > 0) { serveTimer--; return; }
+
+  arrow.x += arrow.vx;
+  arrow.y += arrow.vy;
+
+  if (arrow.y <= 6) { arrow.y = 6; arrow.vy *= -1; }
+  if (arrow.y >= H - 6) { arrow.y = H - 6; arrow.vy *= -1; }
+
+  if (arrow.vx < 0) tryBlock(player);
+  if (arrow.vx > 0) tryBlock(ai);
+
+  if (arrow.x < -30) { ai.score++; scored(); resetArrow(1); }
+  if (arrow.x > W + 30) { player.score++; scored(); resetArrow(-1); }
+}
+
+function scored() {
+  updateScoreboard();
+  if (player.score >= WIN_SCORE) winner = { title: 'VICTORIA!', sub: 'Your legion wins' };
+  else if (ai.score >= WIN_SCORE) winner = { title: 'DEFEAT', sub: 'The computer\'s legion wins' };
+}
+
+// ---------- Drawing ----------
+function drawArena() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#e9cf96'); g.addColorStop(1, '#d1a660');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  // Team ends
+  ctx.fillStyle = 'rgba(183,28,28,0.10)'; ctx.fillRect(0, 0, 120, H);
+  ctx.fillStyle = 'rgba(30,79,163,0.10)'; ctx.fillRect(W - 120, 0, 120, H);
+  // Centre line and circle
+  ctx.strokeStyle = 'rgba(120,80,30,0.35)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([16, 12]);
+  ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, H); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.beginPath(); ctx.arc(W / 2, H / 2, 60, 0, Math.PI * 2); ctx.stroke();
+}
+
+function drawSoldier(p) {
+  const t = p.team, f = p.facing, y = p.y;
+  const sx = f === 1 ? p.x - 16 : p.x + SHIELD_WIDTH + 16; // body centre, behind the shield
+
+  // Spear (behind the body)
+  ctx.strokeStyle = '#6d4c2f'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(sx - f * 12, y - 26); ctx.lineTo(sx - f * 12, y + SHIELD_HEIGHT + 12); ctx.stroke();
+  ctx.fillStyle = '#9ea7ad';
+  ctx.beginPath(); ctx.moveTo(sx - f * 12, y - 36); ctx.lineTo(sx - f * 12 - 4, y - 24); ctx.lineTo(sx - f * 12 + 4, y - 24); ctx.fill();
+
+  // Legs and sandals
+  ctx.fillStyle = '#e0b084';
+  ctx.fillRect(sx - 7, y + SHIELD_HEIGHT - 6, 5, 20);
+  ctx.fillRect(sx + 2, y + SHIELD_HEIGHT - 6, 5, 20);
+  ctx.fillStyle = '#5d3a1a';
+  ctx.fillRect(sx - 8, y + SHIELD_HEIGHT + 11, 7, 4);
+  ctx.fillRect(sx + 1, y + SHIELD_HEIGHT + 11, 7, 4);
+
+  // Tunic
+  ctx.fillStyle = t.tunic;
+  ctx.fillRect(sx - 10, y + 16, 20, SHIELD_HEIGHT - 20);
+  // Armour (lorica segmentata)
+  ctx.fillStyle = '#b8bec4';
+  ctx.fillRect(sx - 11, y + 16, 22, 34);
+  ctx.strokeStyle = '#7b848c'; ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.moveTo(sx - 11, y + 24 + i * 7); ctx.lineTo(sx + 11, y + 24 + i * 7); ctx.stroke(); }
+
+  // Head
+  ctx.fillStyle = '#e0b084';
+  ctx.beginPath(); ctx.arc(sx, y + 4, 10, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(sx + f * 5, y + 4, 1.6, 0, Math.PI * 2); ctx.fill();
+  // Helmet with cheek guard
+  ctx.fillStyle = '#c9cfd4';
+  ctx.beginPath(); ctx.arc(sx, y + 2, 11, Math.PI, Math.PI * 2); ctx.fill();
+  ctx.fillRect(sx - f * 11 - (f === 1 ? 0 : 0) - 2, y + 1, 4, 10);
+  ctx.fillStyle = '#e6b422';
+  ctx.fillRect(sx - 12, y + 1, 24, 2);
+  // Crest
+  ctx.fillStyle = t.crest;
+  ctx.beginPath(); ctx.ellipse(sx, y - 9, 13, 7, 0, Math.PI, Math.PI * 2); ctx.fill();
+
+  // Shield (scutum) – this is what blocks the arrow
+  ctx.fillStyle = t.shield;
+  ctx.beginPath(); ctx.roundRect(p.x, y, SHIELD_WIDTH, SHIELD_HEIGHT, 5); ctx.fill();
+  ctx.strokeStyle = t.trim; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.roundRect(p.x + 1, y + 1, SHIELD_WIDTH - 2, SHIELD_HEIGHT - 2, 4); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(p.x + SHIELD_WIDTH / 2, y + 8); ctx.lineTo(p.x + SHIELD_WIDTH / 2, y + SHIELD_HEIGHT - 8); ctx.stroke();
+  ctx.fillStyle = t.trim;
+  ctx.beginPath(); ctx.arc(p.x + SHIELD_WIDTH / 2, y + SHIELD_HEIGHT / 2, 5, 0, Math.PI * 2); ctx.fill();
+  if (p.flash > 0) {
+    ctx.fillStyle = `rgba(255,255,255,${p.flash / 10})`;
+    ctx.beginPath(); ctx.roundRect(p.x, y, SHIELD_WIDTH, SHIELD_HEIGHT, 5); ctx.fill();
+  }
+}
+
+function drawArrow() {
+  const a = Math.atan2(arrow.vy, arrow.vx);
+  ctx.save();
+  ctx.translate(arrow.x, arrow.y);
+  ctx.rotate(a);
+  // Shadow
+  ctx.strokeStyle = 'rgba(0,0,0,0.18)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-17, 6); ctx.lineTo(14, 6); ctx.stroke();
+  // Shaft
+  ctx.strokeStyle = '#7a5230'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-17, 0); ctx.lineTo(13, 0); ctx.stroke();
+  // Head
+  ctx.fillStyle = '#5f6a72';
+  ctx.beginPath(); ctx.moveTo(ARROW_TIP, 0); ctx.lineTo(11, -5); ctx.lineTo(11, 5); ctx.closePath(); ctx.fill();
+  // Fletching (takes the colour of whoever last blocked it)
+  ctx.fillStyle = arrow.lastFeather;
+  ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-19, -6); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-10, 0); ctx.lineTo(-19, 6); ctx.lineTo(-15, 0); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function draw() {
+  drawArena();
+  drawSoldier(player);
+  drawSoldier(ai);
+  if (!winner) drawArrow();
+
+  sparks.forEach(s => {
+    ctx.fillStyle = `rgba(255,${180 + Math.floor(Math.random() * 60)},60,${s.life / 28})`;
+    ctx.fillRect(s.x, s.y, 3, 3);
+  });
+
+  if (winner || paused) {
+    ctx.fillStyle = 'rgba(40,25,10,0.65)';
+    ctx.fillRect(0, 0, W, H);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e6b422';
+    ctx.font = 'bold 54px Georgia, serif';
+    ctx.fillText(winner ? winner.title : 'PAUSED', W / 2, H / 2 - 10);
+    ctx.fillStyle = '#f3e6c8';
+    ctx.font = '20px Georgia, serif';
+    ctx.fillText(winner ? winner.sub + '. Click or press Space to fight again.' : 'Press Space to resume', W / 2, H / 2 + 30);
+  }
+}
+
+function loop() {
+  if (!paused && !winner) update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ---------- Controls ----------
+document.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  keys[k] = true;
+  if (k === ' ') { e.preventDefault(); if (winner) restart(); else paused = !paused; }
+  if (k === 'arrowup' || k === 'arrowdown') e.preventDefault();
+});
+document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+function moveToPointer(clientY) {
+  const rect = canvas.getBoundingClientRect();
+  const y = (clientY - rect.top) * (H / rect.height);
+  player.y = clamp(y - SHIELD_HEIGHT / 2, TOP_LIMIT, BOTTOM_LIMIT);
+}
+canvas.addEventListener('mousemove', e => moveToPointer(e.clientY));
+canvas.addEventListener('touchmove', e => { e.preventDefault(); moveToPointer(e.touches[0].clientY); }, { passive: false });
+canvas.addEventListener('click', () => { if (winner) restart(); });
+
+restart();
+loop();
+</script>
+</body>
+</html>
